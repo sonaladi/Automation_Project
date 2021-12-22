@@ -1,6 +1,8 @@
 #!/bin/sh 
 s3Bucket=upgrad-adityakumar
 yourName=Aditya
+inventoryFilePath=/var/www/html/inventory.html
+cronJobPath=/etc/cron.d/automation
 
 
 sudo apt update -y
@@ -48,6 +50,27 @@ sleep 10
 
 aws s3 cp /var/tmp/$yourName-httpd-logs-$timestamp.tar s3://${s3Bucket}/$yourName-$timestamp.tar
 
+if [ -f "$inventoryFilePath" ]
+then
+        echo "$inventoryFilePath  File present"
+else
+        echo "inventory.html File Not Found,Creating the new file"
+        touch $inventoryFilePath
+        echo "<b>Log Type &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Time Created &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Size</b>" >> $inventoryFilePath
+        echo "new file is created in $inventoryFilePath"
+fi
+echo "adding backup log status into inventory.html file"
+fileSize=$(du -h /var/tmp/${yourName}-httpd-logs-$timestamp.tar | awk '{print $1}')
+echo "Backup Size :$fileSize"
+echo "<br>httpd-logs &nbsp;&nbsp;&nbsp;&nbsp; $timestamp &nbsp;&nbsp;&nbsp;&nbsp; tar &nbsp;&nbsp;&nbsp;&nbsp; $fileSize" >> $inventoryFilePath
 
 
-
+if [ -f "$cronJobPath" ]
+then
+        echo "Cron job is scheduled already"
+else
+        touch $cronJobPath
+        #this cron job will execute on every dat at 12.00
+        echo "0 0 * * * root /root/Automation_Project/automation.sh" >> $cronJobPath
+        echo "Cron Job is scheduled"
+fi
